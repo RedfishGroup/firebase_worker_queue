@@ -297,4 +297,5 @@ export {
     completeTask,
     errorTask,
     taskListener,
+    setServerTimestamp,
 }
