@@ -8,9 +8,9 @@ It is suited for jobs with very little data throughput but large computation ove
 Redfish Group LLC 2019.
 
 
-# Documentation
+## Documentation
 
-## `function setServerTimestamp(timestamp)`
+### `function setServerTimestamp(timestamp)`
 
 Timestamp will always be firebase.database.ServerValue.TIMESTAMP
 
@@ -18,23 +18,25 @@ We didn't want firebase as a dependency, but need the constant TIMESTAMP. This f
 
  * **Parameters:** `timestamp` — `firebase.database.ServerValue.TIMESTAMP` — 
 
-## `const STATUSES =`
+### `const STATUSES =`
 
 Status constants
 
-## `function TaskException(message, task)`
+available active complete error
+
+### `function TaskException(message, task)`
 
  * **Parameters:**
    * `message` — `String` — 
    * `task` — `Task` — 
 
-## `function checkStatus(status)`
+### `function checkStatus(status)`
 
 throws an exception if status is not a legal status
 
  * **Parameters:** `status` — `any` — 
 
-## `function addTask(ref, nTask)`
+### `function addTask(ref, nTask)`
 
 Add a task to the Queue for someone else to do.
 
@@ -42,7 +44,7 @@ Add a task to the Queue for someone else to do.
    * `{Firebase` — ref
    * `nTask` — `Task` — 
 
-## `function clearTask(ref, task)`
+### `function clearTask(ref, task)`
 
 Remove task from queue.
 
@@ -50,7 +52,7 @@ Remove task from queue.
    * `{Firebase` — ref
    * `task` — `Task` — 
 
-## `function changeTaskStatus( ref, task, newStatus, options =`
+### `function changeTaskStatus( ref, task, newStatus, options =`
 
 Change the Status of a task.
 
@@ -60,7 +62,7 @@ Change the Status of a task.
    * `newStatus` — `STATUSES` — 
    * `options` — `object` — 
 
-## `function claimTask(ref, task, workerID)`
+### `function claimTask(ref, task, workerID)`
 
 Claim a task to be worked on.
 
@@ -70,7 +72,7 @@ Claim a task to be worked on.
    * `workerID` — `String` — <p>
  * **Returns:** `Promise` — Rejects(error) if task has already been claimed. Resolves(Task) otherwise
 
-## `function completeTask(ref, task, result)`
+### `function completeTask(ref, task, result)`
 
 Mark a task as complete, and potentially record the result.
 
@@ -79,7 +81,7 @@ Mark a task as complete, and potentially record the result.
    * `task` — `Task` — 
    * `result` — `object` — 
 
-## `function errorTask(ref, task, message)`
+### `function errorTask(ref, task, message)`
 
 Mark a task as having an error.
 
@@ -88,7 +90,7 @@ Mark a task as having an error.
    * `task` — `Task` — 
    * `message` — `String` — 
 
-## `function watchQueue(ref, cb, status = STATUSES.available)`
+### `function watchQueue(ref, cb, status = STATUSES.available)`
 
 Fire callback when new jobs apear. You can claim them in the callback.
 
@@ -97,7 +99,7 @@ Fire callback when new jobs apear. You can claim them in the callback.
    * `cb,` — `function` — will get called when a new task apears.
    * `status` — `STATUSES` — 
 
-## `function getTask(ref, status = STATUSES.available)`
+### `function getTask(ref, status = STATUSES.available)`
 
 Get the most recent task of a certian status type.
 
@@ -105,7 +107,7 @@ Get the most recent task of a certian status type.
    * `{Firebase` — ref
    * `status` — `STATUSES` — 
 
-## `function taskListener(ref, task, onComplete = null, onError = null)`
+### `function taskListener(ref, task, onComplete = null, onError = null)`
 
 Alert when a task completes or errors
 
