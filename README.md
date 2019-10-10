@@ -1,118 +1,236 @@
-# firebase_worker_queue
+[![view on npm](http://img.shields.io/npm/v/example.svg)](https://github.com/RedfishGroup/firebase_worker_queue/)
 
-Firebase job queue manager.
-A library to facilitate the management of an in browser distributed and paralell computation environment.
-Firebase is used as the compute manager and dipatcher.
-It is suited for jobs with very little data throughput but large computation overheads.
+ # Firebase job queue manager. 🔥👩‍🚒
 
-Redfish Group LLC 2019.
+ ### A library to facilitate the management of an in browser distributed and paralell computation environment.
+ Firebase is used as the compute manager and dipatcher.
+
+ Author: Joshua Thorp
 
 
-## Documentation
+## Constants
 
-### `function setServerTimestamp(timestamp)`
+<dl>
+<dt><a href="#STATUSES">STATUSES</a></dt>
+<dd><p>Status constants</p>
+<p>available,
+active,
+complete,
+error</p>
+</dd>
+</dl>
 
-Timestamp will always be firebase.database.ServerValue.TIMESTAMP
+## Functions
 
-We didn't want firebase as a dependency, but need the constant TIMESTAMP. This function should not be needed until firebase changes the constant. Works for firebase 7.1.0
+<dl>
+<dt><a href="#setServerTimestamp">setServerTimestamp(timestamp)</a></dt>
+<dd><p>Timestamp will always be firebase.database.ServerValue.TIMESTAMP</p>
+<p>We didn&#39;t want firebase as a dependency, but need the constant TIMESTAMP.
+This function should not be needed until firebase changes the constant.
+Works for firebase 7.1.0</p>
+</dd>
+<dt><a href="#TaskException">TaskException(message, task)</a></dt>
+<dd></dd>
+<dt><a href="#checkStatus">checkStatus(status)</a></dt>
+<dd><p>throws an exception if status is not a legal status</p>
+</dd>
+<dt><a href="#addTask">addTask(ref, nTask)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Add a task to the Queue for someone else to do.</p>
+</dd>
+<dt><a href="#clearTask">clearTask(ref, task)</a></dt>
+<dd><p>Remove task from queue.</p>
+</dd>
+<dt><a href="#changeTaskStatus">changeTaskStatus(ref, task, newStatus, options)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Change the Status of a task.</p>
+</dd>
+<dt><a href="#claimTask">claimTask(ref, task, workerID)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Claim a task to be worked on.</p>
+</dd>
+<dt><a href="#completeTask">completeTask(ref, task, result)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Mark a task as complete, and record the result. The result will be placed in the completed task on firebase.</p>
+</dd>
+<dt><a href="#errorTask">errorTask(ref, task, message)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Mark a task as having an error.</p>
+</dd>
+<dt><a href="#watchQueue">watchQueue(ref, cb,, status)</a></dt>
+<dd><p>Fire callback when new jobs apear. You can claim them in the callback.</p>
+</dd>
+<dt><a href="#getTask">getTask(ref, status)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Get the most recent task of a certian status type.</p>
+</dd>
+<dt><a href="#taskListener">taskListener(ref, task, onComplete, onError)</a></dt>
+<dd><p>Alert when a task completes or errors</p>
+</dd>
+</dl>
 
- * **Parameters:** `timestamp` — `firebase.database.ServerValue.TIMESTAMP` — 
+<a name="STATUSES"></a>
 
-### `const STATUSES =`
-
+## STATUSES
 Status constants
 
-available active complete error
+available,
+active,
+complete,
+error
 
-### `function TaskException(message, task)`
+**Kind**: global constant  
+<a name="setServerTimestamp"></a>
 
- * **Parameters:**
-   * `message` — `String` — 
-   * `task` — `Task` — 
+## setServerTimestamp(timestamp)
+Timestamp will always be firebase.database.ServerValue.TIMESTAMP
 
-### `function checkStatus(status)`
+We didn't want firebase as a dependency, but need the constant TIMESTAMP.
+This function should not be needed until firebase changes the constant.
+Works for firebase 7.1.0
 
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| timestamp | <code>firebase.database.ServerValue.TIMESTAMP</code> | 
+
+<a name="TaskException"></a>
+
+## TaskException(message, task)
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| message | <code>String</code> | 
+| task | <code>Task</code> | 
+
+<a name="checkStatus"></a>
+
+## checkStatus(status)
 throws an exception if status is not a legal status
 
- * **Parameters:** `status` — `any` — 
+**Kind**: global function  
 
-### `function addTask(ref, nTask)`
+| Param | Type |
+| --- | --- |
+| status | <code>any</code> | 
 
+<a name="addTask"></a>
+
+## addTask(ref, nTask) ⇒ <code>Promise</code>
 Add a task to the Queue for someone else to do.
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `nTask` — `Task` — 
+**Kind**: global function  
+**Returns**: <code>Promise</code> - resolves if successfull  
 
-### `function clearTask(ref, task)`
+| Param | Type | Description |
+| --- | --- | --- |
+| ref | <code>FirebaseReference</code> |  |
+| nTask | <code>Task</code> | Needs to have attribute signed. |
 
+<a name="clearTask"></a>
+
+## clearTask(ref, task)
 Remove task from queue.
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `task` — `Task` — 
+**Kind**: global function  
 
-### `function changeTaskStatus( ref, task, newStatus, options =`
+| Param | Type |
+| --- | --- |
+| ref | <code>FirebaseRef</code> | 
+| task | <code>Task</code> | 
 
+<a name="changeTaskStatus"></a>
+
+## changeTaskStatus(ref, task, newStatus, options) ⇒ <code>Promise</code>
 Change the Status of a task.
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `task` — `Task` — 
-   * `newStatus` — `STATUSES` — 
-   * `options` — `object` — 
+**Kind**: global function  
+**Returns**: <code>Promise</code> - resolves(new Task), rejects(error)  
 
-### `function claimTask(ref, task, workerID)`
+| Param | Type |
+| --- | --- |
+| ref | <code>FirebaseReference</code> | 
+| task | <code>Task</code> | 
+| newStatus | [<code>STATUSES</code>](#STATUSES) | 
+| options | <code>object</code> | 
 
+<a name="claimTask"></a>
+
+## claimTask(ref, task, workerID) ⇒ <code>Promise</code>
 Claim a task to be worked on.
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `task` — `Task` — 
-   * `workerID` — `String` — <p>
- * **Returns:** `Promise` — Rejects(error) if task has already been claimed. Resolves(Task) otherwise
+**Kind**: global function  
+**Returns**: <code>Promise</code> - Rejects(error) if task has already been claimed. Resolves(Task) otherwise  
 
-### `function completeTask(ref, task, result)`
+| Param | Type |
+| --- | --- |
+| ref | <code>FirebaseReference</code> | 
+| task | <code>Task</code> | 
+| workerID | <code>String</code> | 
 
-Mark a task as complete, and potentially record the result.
+<a name="completeTask"></a>
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `task` — `Task` — 
-   * `result` — `object` — 
+## completeTask(ref, task, result) ⇒ <code>Promise</code>
+Mark a task as complete, and record the result. The result will be placed in the completed task on firebase.
 
-### `function errorTask(ref, task, message)`
+**Kind**: global function  
 
+| Param | Type |
+| --- | --- |
+| ref | <code>FirebaseReference</code> | 
+| task | <code>Task</code> | 
+| result | <code>object</code> | 
+
+<a name="errorTask"></a>
+
+## errorTask(ref, task, message) ⇒ <code>Promise</code>
 Mark a task as having an error.
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `task` — `Task` — 
-   * `message` — `String` — 
+**Kind**: global function  
 
-### `function watchQueue(ref, cb, status = STATUSES.available)`
+| Param | Type |
+| --- | --- |
+| ref | <code>FirebaseRef</code> | 
+| task | <code>Task</code> | 
+| message | <code>String</code> | 
 
+<a name="watchQueue"></a>
+
+## watchQueue(ref, cb,, status)
 Fire callback when new jobs apear. You can claim them in the callback.
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `cb,` — `function` — will get called when a new task apears.
-   * `status` — `STATUSES` — 
+**Kind**: global function  
 
-### `function getTask(ref, status = STATUSES.available)`
+| Param | Type | Description |
+| --- | --- | --- |
+| ref | <code>FirebaseReference</code> |  |
+| cb, | <code>function</code> | will get called when a new task apears. |
+| status | [<code>STATUSES</code>](#STATUSES) |  |
 
+<a name="getTask"></a>
+
+## getTask(ref, status) ⇒ <code>Promise</code>
 Get the most recent task of a certian status type.
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `status` — `STATUSES` — 
+**Kind**: global function  
+**Returns**: <code>Promise</code> - resolve with a Task as the argument.  
 
-### `function taskListener(ref, task, onComplete = null, onError = null)`
+| Param | Type |
+| --- | --- |
+| ref | <code>FirebaseReference</code> | 
+| status | [<code>STATUSES</code>](#STATUSES) | 
 
+<a name="taskListener"></a>
+
+## taskListener(ref, task, onComplete, onError)
 Alert when a task completes or errors
 
- * **Parameters:**
-   * `{Firebase` — ref
-   * `task` — `Task` — 
-   * `onComplete` — `Function` — . Called on completion
-   * `onError` — `Function` — . called on error
+**Kind**: global function  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| ref | <code>FirebaseRef</code> |  |  |
+| task | <code>Task</code> |  |  |
+| onComplete | <code>function</code> | <code></code> | . Called on completion |
+| onError | <code>function</code> | <code></code> | . called on error |
+
+
+* * *
+
+&copy; 2019 Redifish Group LLC
