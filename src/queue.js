@@ -1,9 +1,43 @@
+/**
+ *
+ * Firebase job queue manager.
+ *
+ * A library to facilitate the management of an in browser distributed and paralell computation environment.
+ * Firebase is used as the compute manager and dipatcher.
+ *
+ * It is suited for jobs with very little data throughput but large computation overheads.
+ *
+ * Redfish Group LLC 2019.
+ */
+
+// private static value.
+//  This is currently, as of Oct 2019, the current constant the firebase uses to retrive the server time.
 let ServerTimeStamp = { '.sv': 'timestamp' }
 
+/**
+ *
+ * Timestamp will always be firebase.database.ServerValue.TIMESTAMP
+ *
+ * We didn't want firebase as a dependency, but need the constant TIMESTAMP.
+ * This function should not be needed until firebase changes the constant.
+ * Works for firebase 7.1.0
+ *
+ * @param {firebase.database.ServerValue.TIMESTAMP} timestamp
+ */
 function setServerTimestamp(timestamp) {
     ServerTimeStamp = timestamp
 }
 
+/**
+ * Status constants
+ *
+ * available
+ * active
+ * complete
+ * error
+ *
+ *
+ */
 const STATUSES = {
     available: 'available',
     active: 'active',
@@ -11,6 +45,11 @@ const STATUSES = {
     error: 'error',
 }
 
+/**
+ *
+ * @param {String} message
+ * @param {Task} task
+ */
 function TaskException(message, task) {
     this.message = message
     this.task = task
@@ -43,6 +82,12 @@ function checkStatus(status) {
         )
 }
 
+/**
+ * Add a task to the Queue for someone else to do.
+ *
+ * @param {Firebase Reference} ref
+ * @param {Task} nTask
+ */
 function addTask(ref, nTask) {
     return new Promise((resolve, reject) => {
         console.log('adding task: ', ref, nTask)
@@ -71,6 +116,12 @@ function addTask(ref, nTask) {
     })
 }
 
+/**
+ * Remove task from queue.
+ *
+ * @param {Firebase Ref} ref
+ * @param {Task} task
+ */
 function clearTask(ref, task) {
     if (!ref) throw new TaskException('need a valid ref')
     if (!task.key) throw new TaskException('clear task requires task key', task)
@@ -86,6 +137,14 @@ function clearTask(ref, task) {
         })
 }
 
+/**
+ * Change the Status of a task.
+ *
+ * @param {Firebase Reference} ref
+ * @param {Task} task
+ * @param {STATUSES} newStatus
+ * @param {object} options
+ */
 function changeTaskStatus(
     ref,
     task,
@@ -160,6 +219,15 @@ function changeTaskStatus(
     })
 }
 
+/**
+ * Claim a task to be worked on.
+ *
+ * @param {Firebase Reference} ref
+ * @param {Task} task
+ * @param {String} workerID
+ *
+ * @returns {Promise} Rejects(error) if task has already been claimed. Resolves(Task) otherwise
+ */
 function claimTask(ref, task, workerID) {
     return new Promise((resolve, reject) => {
         const taskWorkerRef = ref
@@ -199,6 +267,13 @@ function claimTask(ref, task, workerID) {
     })
 }
 
+/**
+ * Mark a task as complete, and potentially record the result.
+ *
+ * @param {Firebase Reference} ref
+ * @param {Task} task
+ * @param {object} result
+ */
 function completeTask(ref, task, result) {
     return new Promise((resolve, reject) => {
         changeTaskStatus(ref, task, STATUSES.complete, { result })
@@ -211,6 +286,13 @@ function completeTask(ref, task, result) {
     })
 }
 
+/**
+ * Mark a task as having an error.
+ *
+ * @param {Firebase Ref} ref
+ * @param {Task} task
+ * @param {String} message
+ */
 function errorTask(ref, task, message) {
     return new Promise((resolve, reject) => {
         console.log('got error: ', task, message)
@@ -224,6 +306,13 @@ function errorTask(ref, task, message) {
     })
 }
 
+/**
+ * Fire callback when new jobs apear. You can claim them in the callback.
+ *
+ * @param {Firebase Reference} ref
+ * @param {function} cb, will get called when a new task apears.
+ * @param {STATUSES} status
+ */
 function watchQueue(ref, cb, status = STATUSES.available) {
     checkStatus(status)
     ref.child(status).on('child_added', function(snap) {
@@ -240,6 +329,12 @@ function watchQueue(ref, cb, status = STATUSES.available) {
     })
 }
 
+/**
+ * Get the most recent task of a certian status type.
+ *
+ * @param {Firebase Reference} ref
+ * @param {STATUSES} status
+ */
 function getTask(ref, status = STATUSES.available) {
     if (!ref) throw new TaskException('need a valid ref')
     checkStatus(status)
@@ -260,6 +355,14 @@ function getTask(ref, status = STATUSES.available) {
     })
 }
 
+/**
+ * Alert when a task completes or errors
+ *
+ * @param {Firebase Ref} ref
+ * @param {Task} task
+ * @param {Function} onComplete . Called on completion
+ * @param {Function} onError . called on error
+ */
 function taskListener(ref, task, onComplete = null, onError = null) {
     const taskListenerRef = ref.child('tasks').child(task.key)
     const taskListener = taskListenerRef.on(
