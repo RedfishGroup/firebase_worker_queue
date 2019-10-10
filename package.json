@@ -5,5 +5,11 @@
   "main": "src/queue.js",
   "repository": "git@github.com:RedfishGroup/firebase_worker_queue.git",
   "author": "Joshua Thorp <joshua@stigmergic.net>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "jsdoc-to-markdown": "^5.0.1"
+  },
+  "scripts": {
+    "docs":"rm README.md; node ./node_modules/jsdoc-to-markdown/bin/cli.js ./src/queue.js --template README.hbs >> README.md"
+  }
 }

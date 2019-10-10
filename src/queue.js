@@ -5,7 +5,6 @@
  * A library to facilitate the management of an in browser distributed and paralell computation environment.
  * Firebase is used as the compute manager and dipatcher.
  *
- * It is suited for jobs with very little data throughput but large computation overheads.
  *
  * Redfish Group LLC 2019.
  */
@@ -31,9 +30,9 @@ function setServerTimestamp(timestamp) {
 /**
  * Status constants
  *
- * available
- * active
- * complete
+ * available,
+ * active,
+ * complete,
  * error
  *
  *
@@ -85,8 +84,10 @@ function checkStatus(status) {
 /**
  * Add a task to the Queue for someone else to do.
  *
- * @param {Firebase Reference} ref
- * @param {Task} nTask
+ * @param {FirebaseReference} ref
+ * @param {Task} nTask Needs to have attribute signed.
+ *
+ * @returns {Promise} resolves if successfull
  */
 function addTask(ref, nTask) {
     return new Promise((resolve, reject) => {
@@ -119,7 +120,7 @@ function addTask(ref, nTask) {
 /**
  * Remove task from queue.
  *
- * @param {Firebase Ref} ref
+ * @param {FirebaseRef} ref
  * @param {Task} task
  */
 function clearTask(ref, task) {
@@ -140,10 +141,12 @@ function clearTask(ref, task) {
 /**
  * Change the Status of a task.
  *
- * @param {Firebase Reference} ref
+ * @param {FirebaseReference} ref
  * @param {Task} task
  * @param {STATUSES} newStatus
  * @param {object} options
+ *
+ * @returns {Promise} resolves(new Task), rejects(error)
  */
 function changeTaskStatus(
     ref,
@@ -222,7 +225,7 @@ function changeTaskStatus(
 /**
  * Claim a task to be worked on.
  *
- * @param {Firebase Reference} ref
+ * @param {FirebaseReference} ref
  * @param {Task} task
  * @param {String} workerID
  *
@@ -268,11 +271,13 @@ function claimTask(ref, task, workerID) {
 }
 
 /**
- * Mark a task as complete, and potentially record the result.
+ * Mark a task as complete, and record the result. The result will be placed in the completed task on firebase.
  *
- * @param {Firebase Reference} ref
+ * @param {FirebaseReference} ref
  * @param {Task} task
  * @param {object} result
+ *
+ * @returns {Promise}
  */
 function completeTask(ref, task, result) {
     return new Promise((resolve, reject) => {
@@ -289,9 +294,11 @@ function completeTask(ref, task, result) {
 /**
  * Mark a task as having an error.
  *
- * @param {Firebase Ref} ref
+ * @param {FirebaseRef} ref
  * @param {Task} task
  * @param {String} message
+ *
+ * @returns {Promise}
  */
 function errorTask(ref, task, message) {
     return new Promise((resolve, reject) => {
@@ -309,9 +316,10 @@ function errorTask(ref, task, message) {
 /**
  * Fire callback when new jobs apear. You can claim them in the callback.
  *
- * @param {Firebase Reference} ref
+ * @param {FirebaseReference} ref
  * @param {function} cb, will get called when a new task apears.
  * @param {STATUSES} status
+ *
  */
 function watchQueue(ref, cb, status = STATUSES.available) {
     checkStatus(status)
@@ -332,8 +340,10 @@ function watchQueue(ref, cb, status = STATUSES.available) {
 /**
  * Get the most recent task of a certian status type.
  *
- * @param {Firebase Reference} ref
+ * @param {FirebaseReference} ref
  * @param {STATUSES} status
+ *
+ * @returns {Promise} resolve with a Task as the argument.
  */
 function getTask(ref, status = STATUSES.available) {
     if (!ref) throw new TaskException('need a valid ref')
@@ -358,7 +368,7 @@ function getTask(ref, status = STATUSES.available) {
 /**
  * Alert when a task completes or errors
  *
- * @param {Firebase Ref} ref
+ * @param {FirebaseRef} ref
  * @param {Task} task
  * @param {Function} onComplete . Called on completion
  * @param {Function} onError . called on error
