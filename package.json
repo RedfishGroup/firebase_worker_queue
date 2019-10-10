@@ -1,0 +1,9 @@
+{
+  "name": "firebase_worker_queue",
+  "version": "1.0.0",
+  "description": "Firebase Worker Queue",
+  "main": "src/queue.js",
+  "repository": "git@github.com:RedfishGroup/firebase_worker_queue.git",
+  "author": "Joshua Thorp <joshua@stigmergic.net>",
+  "license": "MIT"
+}
