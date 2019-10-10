@@ -7,7 +7,7 @@
  *
  * It is suited for jobs with very little data throughput but large computation overheads.
  *
- * Redfish Group LLc 2019.
+ * Redfish Group LLC 2019.
  */
 
 // private static value.
@@ -30,6 +30,13 @@ function setServerTimestamp(timestamp) {
 
 /**
  * Status constants
+ *
+ * available
+ * active
+ * complete
+ * error
+ *
+ *
  */
 const STATUSES = {
     available: 'available',
