@@ -54,3 +54,22 @@ def addTask(refURL, nTask):
     if response.status_code != 200:
         raise TaskException('error updating task key')
     requests.put(f'{refURL}/{task["status"]}/{task["key"]}.json', json=True)
+
+    return task
+
+
+def clearTask(refURL, task):
+    if not refURL:
+        raise TaskException('need a valid refURL')
+    if not 'key' in task:
+        raise TaskException('clear task requires task key', task)
+    if not 'status' in task:
+        raise TaskException('clear task requires task status', task)
+    checkStatus(task['status'])
+
+    response = requests.delete(f'{refURL}/{task["status"]}/{task["key"]}.json')
+    if response.status_code != 200:
+        raise TaskException('failed to delete task from status list', task)
+    response = requests.delete(f'{refURL}/tasks/{task["key"]}.json')
+    if response.status_code != 200:
+        raise TaskException('failed to delete task from task list', task)
