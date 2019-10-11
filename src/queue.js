@@ -17,19 +17,6 @@ function TaskException(message, task) {
     this.name = 'TaskException'
 }
 
-function compare(obj1, obj2) {
-    if (obj1 === obj2) return true
-    // console.log('lengths: ', Object.keys(obj1).length, Object.keys(obj2).length)
-    return (
-        Object.keys(obj1).length === Object.keys(obj2).length &&
-        Object.keys(obj1).every(key => {
-            // console.log(`${key}: ${obj1[key]} ${obj2[key]}`)
-
-            return obj2.hasOwnProperty(key) && compare(obj1[key], obj2[key])
-        })
-    )
-}
-
 /**
  *
  * throws an exception if status is not a legal status
@@ -60,14 +47,17 @@ function addTask(ref, nTask) {
         const taskRef = ref.child('tasks').push()
         task.key = taskRef.key
         task.timeAdded = ServerTimeStamp
-        taskRef.set(task).then(() => {
-            ref.child(task.status)
-                .child(task.key)
-                .set(true)
-                .then(() => {
-                    resolve(task)
-                })
-        })
+        taskRef
+            .set(task)
+            .then(() => {
+                ref.child(task.status)
+                    .child(task.key)
+                    .set(true)
+                    .then(() => {
+                        resolve(task)
+                    })
+            })
+            .catch(e => reject(e))
     })
 }
 
