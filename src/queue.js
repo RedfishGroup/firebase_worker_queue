@@ -24,7 +24,7 @@ function TaskException(message, task) {
  * @param {any} status
  */
 function checkStatus(status) {
-    if (!STATUSES[status.status || status])
+    if (!STATUSES[status])
         throw new TaskException(
             'task must have status,  one of ["available", "active", "complete", "error"]'
         )
@@ -36,10 +36,11 @@ function addTask(ref, nTask) {
         const task = { ...nTask }
         if (!task.status) task.status = STATUSES.available
         if (!ref) throw new TaskException('need a valid ref')
-        checkStatus(task)
+        checkStatus(task.status)
         if (!task.signed) {
             throw new TaskException(
-                'task needs to be signed with the current userid'
+                'task needs to be signed with the current userid',
+                task
             )
         }
         if (task.key) throw new TaskException('task already has a key: ', task)
@@ -85,7 +86,7 @@ function changeTaskStatus(
     return new Promise((resolve, reject) => {
         if (!ref) throw new TaskException('need a valid ref')
         if (!task || !task.key) throw new TaskException('need a valid task')
-        checkStatus(task)
+        checkStatus(task.status)
         checkStatus(newStatus)
         if (task.status === newStatus) return
 
