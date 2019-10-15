@@ -55,19 +55,6 @@ function TaskException(message, task) {
     this.name = 'TaskException'
 }
 
-function compare(obj1, obj2) {
-    if (obj1 === obj2) return true
-    // console.log('lengths: ', Object.keys(obj1).length, Object.keys(obj2).length)
-    return (
-        Object.keys(obj1).length === Object.keys(obj2).length &&
-        Object.keys(obj1).every(key => {
-            // console.log(`${key}: ${obj1[key]} ${obj2[key]}`)
-
-            return obj2.hasOwnProperty(key) && compare(obj1[key], obj2[key])
-        })
-    )
-}
-
 /**
  *
  * throws an exception if status is not a legal status
@@ -75,7 +62,7 @@ function compare(obj1, obj2) {
  * @param {any} status
  */
 function checkStatus(status) {
-    if (!STATUSES[status.status || status])
+    if (!STATUSES[status])
         throw new TaskException(
             'task must have status,  one of ["available", "active", "complete", "error"]'
         )
@@ -95,10 +82,11 @@ function addTask(ref, nTask) {
         const task = { ...nTask }
         if (!task.status) task.status = STATUSES.available
         if (!ref) throw new TaskException('need a valid ref')
-        checkStatus(task)
+        checkStatus(task.status)
         if (!task.signed) {
             throw new TaskException(
-                'task needs to be signed with the current userid'
+                'task needs to be signed with the current userid',
+                task
             )
         }
         if (task.key) throw new TaskException('task already has a key: ', task)
@@ -106,14 +94,17 @@ function addTask(ref, nTask) {
         const taskRef = ref.child('tasks').push()
         task.key = taskRef.key
         task.timeAdded = ServerTimeStamp
-        taskRef.set(task).then(() => {
-            ref.child(task.status)
-                .child(task.key)
-                .set(true)
-                .then(() => {
-                    resolve(task)
-                })
-        })
+        taskRef
+            .set(task)
+            .then(() => {
+                ref.child(task.status)
+                    .child(task.key)
+                    .set(true)
+                    .then(() => {
+                        resolve(task)
+                    })
+            })
+            .catch(e => reject(e))
     })
 }
 
@@ -157,7 +148,7 @@ function changeTaskStatus(
     return new Promise((resolve, reject) => {
         if (!ref) throw new TaskException('need a valid ref')
         if (!task || !task.key) throw new TaskException('need a valid task')
-        checkStatus(task)
+        checkStatus(task.status)
         checkStatus(newStatus)
         if (task.status === newStatus) return
 
