@@ -345,8 +345,9 @@ function getTask(ref, status = STATUSES.available) {
             .limitToFirst(1)
             .once('value', snap => {
                 if (snap.exists()) {
+                    const key = Object.keys(snap.val())[0]
                     ref.child('tasks')
-                        .child(snap.key)
+                        .child(key)
                         .once('value')
                         .then(snap => {
                             resolve(snap.val())
