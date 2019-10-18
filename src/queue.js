@@ -354,6 +354,8 @@ function getTask(ref, status = STATUSES.available) {
                         .then(snap => {
                             resolve(snap.val())
                         })
+                } else {
+                    resolve(null)
                 }
             })
     })
