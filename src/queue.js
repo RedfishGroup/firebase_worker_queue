@@ -241,12 +241,12 @@ function claimTask(ref, task, workerID) {
             (error, committed, snap) => {
                 if (error) {
                     console.log('Transaction failed abnormally!', error)
-                    reject(error)
+                    return reject(error)
                 } else if (!committed) {
                     console.log(
                         'We aborted the transaction because a workerID has already been assigned'
                     )
-                    reject(error)
+                    return reject('already claimed')
                 } else {
                     // successfully claimed the task,  update its status
                     changeTaskStatus(ref, task, STATUSES.active)
