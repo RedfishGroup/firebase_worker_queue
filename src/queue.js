@@ -354,8 +354,11 @@ function getTask(ref, status = STATUSES.available) {
                         .then(snap => {
                             resolve(snap.val())
                         })
+                        .catch(err => {
+                            reject(err)
+                        })
                 } else {
-                    resolve(null)
+                    reject('snapshot is null')
                 }
             })
     })
