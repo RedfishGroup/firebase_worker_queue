@@ -187,29 +187,23 @@ function changeTaskStatus(
         const newRef = ref.child(newStatus).child(task.key)
         const taskRef = ref.child('tasks').child(task.key)
 
-        oldRef
-            .once('value')
-            .then(snap => {
+        oldRef.once('value').then(async snap => {
+            try {
                 const taskData = snap.val()
-                if (!taskData) throw new TaskException('no data found', task)
-                oldRef
-                    .set(null)
-                    .then(() => {
-                        taskRef
-                            .update(newTask)
-                            .then(() => {
-                                newRef
-                                    .set(true)
-                                    .then(() => {
-                                        resolve(newTask)
-                                    })
-                                    .catch(error => reject(error))
-                            })
-                            .catch(error => reject(error))
-                    })
-                    .catch(error => reject(error))
-            })
-            .catch(error => reject(error))
+                if (!taskData) {
+                    throw new TaskException('no data found', task)
+                }
+                await oldRef.set(null)
+                await taskRef.update(newTask)
+                const ev2 = await taskRef.once('value')
+                const val2 = await ev2.val()
+                await taskRef.update(val2)
+                await newRef.set(true)
+                resolve(newTask)
+            } catch (err) {
+                reject(err)
+            }
+        })
     })
 }
 
