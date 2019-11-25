@@ -196,10 +196,9 @@ function changeTaskStatus(
                 await oldRef.set(null)
                 await taskRef.update(newTask)
                 const ev2 = await taskRef.once('value')
-                const val2 = await ev2.val()
-                await taskRef.update(val2)
+                const val2 = ev2.val()
                 await newRef.set(true)
-                resolve(newTask)
+                resolve(val2)
             } catch (err) {
                 reject(err)
             }
