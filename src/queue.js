@@ -157,7 +157,7 @@ function changeTaskStatus(
         }
 
         if (options.requeue) {
-            // set do null so that update erases them from firebase
+            // set to null so that update erases them from firebase
             newTask['workerID'] = null
             newTask['result'] = null
             newTask['signed'] = null
