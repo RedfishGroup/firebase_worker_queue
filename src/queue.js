@@ -143,22 +143,29 @@ function changeTaskStatus(
     ref,
     task,
     newStatus,
-    options = { workerID: null, message: null, result: null }
+    options = { workerID: null, message: null, result: null, requeue: null }
 ) {
     return new Promise((resolve, reject) => {
         if (!ref) throw new TaskException('need a valid ref')
         if (!task || !task.key) throw new TaskException('need a valid task')
         checkStatus(task.status)
         checkStatus(newStatus)
-        if (task.status === newStatus) return
 
         const newTask = {
             ...task,
             status: newStatus,
         }
 
-        if (options.workerID) newTask.workerID = options.workerID
-        if (options.result) newTask.result = options.result
+        if (options.requeue) {
+            // set do null so that update erases them from firebase
+            newTask['workerID'] = null
+            newTask['result'] = null
+            newTask['signed'] = null
+        } else {
+            if (task.status === newStatus) return
+            if (options.workerID) newTask.workerID = options.workerID
+            if (options.result) newTask.result = options.result
+        }
 
         if (newStatus === STATUSES.active) {
             newTask.timeStarted = ServerTimeStamp
