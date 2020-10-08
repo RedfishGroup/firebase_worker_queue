@@ -401,7 +401,6 @@ function taskListener(ref, task, onComplete = null, onError = null) {
  * @export
  * @param {FirebaseRef} ref
  * @param {Task} task
- * @param {Function} onComplete . Called on completion
  * @return {Promise}
  */
 function taskListenerPromise(ref, task) {
