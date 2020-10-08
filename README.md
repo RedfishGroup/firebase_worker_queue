@@ -61,6 +61,9 @@ Works for firebase 7.1.0</p>
 <dt><a href="#taskListener">taskListener(ref, task, onComplete, onError)</a></dt>
 <dd><p>Alert when a task completes or errors</p>
 </dd>
+<dt><a href="#taskListenerPromise">taskListenerPromise(ref, task, onComplete)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Alert when a task completes or errors as a promise</p>
+</dd>
 </dl>
 
 <a name="STATUSES"></a>
@@ -229,6 +232,19 @@ Alert when a task completes or errors
 | task | <code>Task</code> |  |  |
 | onComplete | <code>function</code> | <code></code> | . Called on completion |
 | onError | <code>function</code> | <code></code> | . called on error |
+
+<a name="taskListenerPromise"></a>
+
+## taskListenerPromise(ref, task, onComplete) ⇒ <code>Promise</code>
+Alert when a task completes or errors as a promise
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| ref | <code>FirebaseRef</code> |  |
+| task | <code>Task</code> |  |
+| onComplete | <code>function</code> | . Called on completion |
 
 
 * * *

@@ -104,7 +104,7 @@ function addTask(ref, nTask) {
                         resolve(task)
                     })
             })
-            .catch(e => reject(e))
+            .catch((e) => reject(e))
     })
 }
 
@@ -123,9 +123,7 @@ function clearTask(ref, task) {
         .child(task.key)
         .set(null)
         .then(() => {
-            ref.child('tasks')
-                .child(task.key)
-                .set(null)
+            ref.child('tasks').child(task.key).set(null)
         })
 }
 
@@ -194,7 +192,7 @@ function changeTaskStatus(
         const newRef = ref.child(newStatus).child(task.key)
         const taskRef = ref.child('tasks').child(task.key)
 
-        oldRef.once('value').then(async snap => {
+        oldRef.once('value').then(async (snap) => {
             try {
                 const taskData = snap.val()
                 if (!taskData) {
@@ -229,7 +227,7 @@ function claimTask(ref, task, workerID) {
             .child(task.key)
             .child('workerID')
         taskWorkerRef.transaction(
-            currentData => {
+            (currentData) => {
                 if (currentData === null) {
                     return workerID
                 }
@@ -250,10 +248,10 @@ function claimTask(ref, task, workerID) {
                 } else {
                     // successfully claimed the task,  update its status
                     changeTaskStatus(ref, task, STATUSES.active)
-                        .then(newTask => {
+                        .then((newTask) => {
                             resolve(newTask)
                         })
-                        .catch(error => {
+                        .catch((error) => {
                             reject(error)
                         })
                 }
@@ -275,10 +273,10 @@ function claimTask(ref, task, workerID) {
 function completeTask(ref, task, result) {
     return new Promise((resolve, reject) => {
         changeTaskStatus(ref, task, STATUSES.complete, { result })
-            .then(newTask => {
+            .then((newTask) => {
                 resolve(newTask)
             })
-            .catch(error => {
+            .catch((error) => {
                 reject(error)
             })
     })
@@ -297,10 +295,10 @@ function errorTask(ref, task, message) {
     return new Promise((resolve, reject) => {
         console.log('got error: ', task, message)
         changeTaskStatus(ref, task, STATUSES.error, { message })
-            .then(newTask => {
+            .then((newTask) => {
                 resolve(newTask)
             })
-            .catch(error => {
+            .catch((error) => {
                 reject(error)
             })
     })
@@ -316,14 +314,14 @@ function errorTask(ref, task, message) {
  */
 function watchQueue(ref, cb, status = STATUSES.available) {
     checkStatus(status)
-    ref.child(status).on('child_added', function(snap) {
+    ref.child(status).on('child_added', function (snap) {
         console.log('child_added: ', { snap })
         if (snap && cb) {
             const key = snap.key
             ref.child('tasks')
                 .child(key)
                 .once('value')
-                .then(snap => {
+                .then((snap) => {
                     cb(snap.val())
                 })
         }
@@ -345,16 +343,16 @@ function getTask(ref, status = STATUSES.available) {
         ref.child(status)
             .orderByKey()
             .limitToFirst(1)
-            .once('value', snap => {
+            .once('value', (snap) => {
                 if (snap.exists()) {
                     const key = Object.keys(snap.val())[0]
                     ref.child('tasks')
                         .child(key)
                         .once('value')
-                        .then(snap => {
+                        .then((snap) => {
                             resolve(snap.val())
                         })
-                        .catch(err => {
+                        .catch((err) => {
                             reject(err)
                         })
                 } else {
@@ -376,7 +374,7 @@ function taskListener(ref, task, onComplete = null, onError = null) {
     const taskListenerRef = ref.child('tasks').child(task.key)
     const taskListener = taskListenerRef.on(
         'value',
-        snap => {
+        (snap) => {
             if (!snap.exists()) {
                 console.log('task does not exist, going to cancel listener')
                 taskListenerRef.off('value', taskListener)
@@ -391,10 +389,34 @@ function taskListener(ref, task, onComplete = null, onError = null) {
                 taskListenerRef.off('value', taskListener)
             }
         },
-        error => {
+        (error) => {
             console.log('GOT ERROR: ', error)
         }
     )
+}
+
+/**
+ * Alert when a task completes or errors as a promise
+ *
+ * @export
+ * @param {FirebaseRef} ref
+ * @param {Task} task
+ * @param {Function} onComplete . Called on completion
+ * @return {Promise}
+ */
+function taskListenerPromise(ref, task) {
+    return new Promise((resolve, reject) => {
+        taskListener(
+            ref,
+            task,
+            (a) => {
+                resolve(a)
+            },
+            (err) => {
+                reject(err)
+            }
+        )
+    })
 }
 
 export {
@@ -409,5 +431,6 @@ export {
     completeTask,
     errorTask,
     taskListener,
+    taskListenerPromise,
     setServerTimestamp,
 }
