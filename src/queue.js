@@ -418,6 +418,33 @@ function taskListenerPromise(ref, task) {
     })
 }
 
+/**
+ * Put stale active tasks back on the availabe queue
+ *
+ * @param {Reference} ref
+ * @param {number} [expirationDuration=1000*60*4]
+ */
+async function requeueStaleActiveTasks(
+    ref,
+    expirationDuration = 1000 * 60 * 4
+) {
+    const actSnap = await ref.child('active').once('value')
+    const actVal = actSnap.val()
+    for (let i in actVal) {
+        const taskSnap = await ref.child('tasks').child(i).once('value')
+        const taskVal = taskSnap.val()
+        if (taskVal) {
+            const time = new Date(taskVal.timeStarted)
+            const now = new Date()
+            if (now - time > expirationDuration) {
+                changeTaskStatus(ref, taskVal, STATUSES.available, {
+                    requeue: true,
+                })
+            }
+        }
+    }
+}
+
 export {
     STATUSES,
     TaskException,
@@ -432,4 +459,5 @@ export {
     taskListener,
     taskListenerPromise,
     setServerTimestamp,
+    requeueStaleActiveTasks,
 }
