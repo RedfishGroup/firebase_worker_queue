@@ -64,6 +64,9 @@ Works for firebase 7.1.0</p>
 <dt><a href="#taskListenerPromise">taskListenerPromise(ref, task)</a> ⇒ <code>Promise</code></dt>
 <dd><p>Alert when a task completes or errors as a promise</p>
 </dd>
+<dt><a href="#requeueStaleActiveTasks">requeueStaleActiveTasks(ref, [expirationDuration])</a></dt>
+<dd><p>Put stale active tasks back on the availabe queue</p>
+</dd>
 </dl>
 
 <a name="STATUSES"></a>
@@ -244,6 +247,18 @@ Alert when a task completes or errors as a promise
 | --- | --- |
 | ref | <code>FirebaseRef</code> | 
 | task | <code>Task</code> | 
+
+<a name="requeueStaleActiveTasks"></a>
+
+## requeueStaleActiveTasks(ref, [expirationDuration])
+Put stale active tasks back on the availabe queue
+
+**Kind**: global function  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| ref | <code>Reference</code> |  | 
+| [expirationDuration] | <code>number</code> | <code>1000*60*4</code> | 
 
 
 * * *
