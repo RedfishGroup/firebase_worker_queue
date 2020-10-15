@@ -459,4 +459,5 @@ export {
     taskListener,
     taskListenerPromise,
     setServerTimestamp,
+    requeueStaleActiveTasks,
 }
