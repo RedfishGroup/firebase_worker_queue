@@ -329,6 +329,61 @@ function watchQueue(ref, cb, status = STATUSES.available) {
 }
 
 /**
+ * Callback used by myFunction.
+ * @callback watchQueueAsync~availabe
+ * @param {Object} Result
+ * @param {Object} Error
+ */
+/**
+ * Watch the queue, but only accept one async task at a tiime
+ *
+ * @param {FirebaseRef} ref
+ * @param {watchQueueAsync~availabe} cb
+ * @param {STATUSES} [status=STATUSES.available]
+ *
+ */
+function watchQueueAsync(ref, cb, status = STATUSES.available) {
+    checkStatus(status)
+    ref.child(status).on('child_added', async function (snap) {
+        console.log('child_added: ', { snap })
+        if (snap && cb) {
+            const key = snap.key
+            const taskRef = ref.child('tasks').child(key)
+            const snap2 = await taskRef.once('value')
+            const val = await snap2.val()
+            asyncQueue.push({ cb, val })
+            popFromAsyncQueue()
+        }
+    })
+}
+
+/**@private
+ * @type {*} */
+const asyncQueue = []
+/**@private
+ * @type {*} */
+let busyAsyncQueue = false
+/**
+ * @private
+ */
+async function popFromAsyncQueue() {
+    if (asyncQueue.length <= 0 || busyAsyncQueue === true) {
+        return
+    }
+    const a = asyncQueue.pop()
+    busyAsyncQueue = true
+    try {
+        await a.cb(a.val)
+    } catch (err) {
+        busyAsyncQueue = false
+        setTimeout(popFromAsyncQueue, 0)
+        cb(undefined, error)
+    }
+    busyAsyncQueue = false
+    setTimeout(popFromAsyncQueue, 0)
+}
+
+/**
  * Get the most recent task of a certian status type.
  *
  * @param {FirebaseReference} ref
@@ -453,6 +508,7 @@ export {
     getTask,
     changeTaskStatus,
     watchQueue,
+    watchQueueAsync,
     claimTask,
     completeTask,
     errorTask,

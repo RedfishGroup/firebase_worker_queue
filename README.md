@@ -55,6 +55,9 @@ Works for firebase 7.1.0</p>
 <dt><a href="#watchQueue">watchQueue(ref, cb,, status)</a></dt>
 <dd><p>Fire callback when new jobs apear. You can claim them in the callback.</p>
 </dd>
+<dt><a href="#watchQueueAsync">watchQueueAsync(ref, cb, [status])</a></dt>
+<dd><p>Watch the queue, but only accept one async task at a tiime</p>
+</dd>
 <dt><a href="#getTask">getTask(ref, status)</a> ⇒ <code>Promise</code></dt>
 <dd><p>Get the most recent task of a certian status type.</p>
 </dd>
@@ -208,6 +211,31 @@ Fire callback when new jobs apear. You can claim them in the callback.
 | ref | <code>FirebaseReference</code> |  |
 | cb, | <code>function</code> | will get called when a new task apears. |
 | status | [<code>STATUSES</code>](#STATUSES) |  |
+
+<a name="watchQueueAsync"></a>
+
+## watchQueueAsync(ref, cb, [status])
+Watch the queue, but only accept one async task at a tiime
+
+**Kind**: global function  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| ref | <code>FirebaseRef</code> |  | 
+| cb | [<code>availabe</code>](#watchQueueAsync..availabe) |  | 
+| [status] | [<code>STATUSES</code>](#STATUSES) | <code>STATUSES.available</code> | 
+
+<a name="watchQueueAsync..availabe"></a>
+
+### watchQueueAsync~availabe : <code>function</code>
+Callback used by myFunction.
+
+**Kind**: inner typedef of [<code>watchQueueAsync</code>](#watchQueueAsync)  
+
+| Param | Type |
+| --- | --- |
+| Result | <code>Object</code> | 
+| Error | <code>Object</code> | 
 
 <a name="getTask"></a>
 
