@@ -7,7 +7,7 @@
 
  Author: Joshua Thorp
 
-demo : [Demo](./demo/pi.html)
+demo : [code](https://github.com/RedfishGroup/firebase_worker_queue/blob/master/demo/pi.html), [working](https://redfishgroup.github.io/firebase_worker_queue/demo/pi.html)
 
 
 ## Constants
