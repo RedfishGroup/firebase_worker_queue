@@ -7,6 +7,8 @@
 
  Author: Joshua Thorp
 
+demo : [Demo](./demo/pi.html)
+
 
 ## Constants
 
