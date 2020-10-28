@@ -335,7 +335,8 @@ function watchQueue(ref, cb, status = STATUSES.available) {
  * @param {Object} Error
  */
 /**
- * Watch the queue, but only accept one async task at a tiime
+ * Watch the queue, and only accept one async task at a time.
+ *   This will waiit for the callback to finish before notifying that another task is avaliable.
  *
  * @param {FirebaseRef} ref
  * @param {watchQueueAsync~availabe} cb

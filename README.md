@@ -56,7 +56,8 @@ Works for firebase 7.1.0</p>
 <dd><p>Fire callback when new jobs apear. You can claim them in the callback.</p>
 </dd>
 <dt><a href="#watchQueueAsync">watchQueueAsync(ref, cb, [status])</a></dt>
-<dd><p>Watch the queue, but only accept one async task at a tiime</p>
+<dd><p>Watch the queue, and only accept one async task at a time.
+  This will waiit for the callback to finish before notifying that another task is avaliable.</p>
 </dd>
 <dt><a href="#getTask">getTask(ref, status)</a> ⇒ <code>Promise</code></dt>
 <dd><p>Get the most recent task of a certian status type.</p>
@@ -215,7 +216,8 @@ Fire callback when new jobs apear. You can claim them in the callback.
 <a name="watchQueueAsync"></a>
 
 ## watchQueueAsync(ref, cb, [status])
-Watch the queue, but only accept one async task at a tiime
+Watch the queue, and only accept one async task at a time.
+  This will waiit for the callback to finish before notifying that another task is avaliable.
 
 **Kind**: global function  
 
