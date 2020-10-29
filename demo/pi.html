@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <html>
-<title>Pi worker queue</title>
+<title>Pi Estimation Worker Queue Demo</title>
+
+
 <head>
     <script src="https://www.gstatic.com/firebasejs/7.13.2/firebase.js"></script>
     <script src="https://d3js.org/d3.v4.js"></script>
@@ -11,12 +13,74 @@
         import './pi.js'
 
     </script>
+    <style>
+        .explanation  {
+            margin: auto; 
+            margin-left: calc(10vw);
+            margin-right: calc(10vw);
+
+            text-align: justify;
+            border-radius: 2%;
+            background-color: rgb(228, 228, 228);
+        }
+        .explanationLeft {
+ 
+         
+        }
+        .explanationRight {
+            float: left;
+            margin-top: calc(10vh);
+            margin-left: 10px;
+            margin-right: 10px;
+
+        }
+
+        .theMeat {
+            margin: auto; 
+            margin-left: calc(10vw);
+            margin-right: calc(10vw);
+
+            text-align: justify;
+            border-radius: 2%;
+            background-color: rgb(250, 249, 249);
+        }
+
+
+    </style>
 </head>
+
 <body>
-    <button onclick="addTask()">Add 20000000 more samples to queue</button>
-    <div id='status'></div>
-    <div id='results'></div>
-    <div id="my_dataviz"></div>
+
+<div>
+    <div class='theMeat'>
+
+
+        <h2>Pi Estimation Worker Queue Demo</h2>
+    <div>
+        We will use a Monte Carlo style estimation of pi. The idea is to randomly sample points in a 1x1 square. If that point lands in the a circumscribed circle then it is is a hit. 
+        If we throw enough darts we might eventually get a decent approximation of pi. This is not the easiest way to calculate pi, but it is a good demo for using distributed computation. 
+    </div>
+</div>
+    <div class='explanation'>
+        <span class='explanationRight'>
+        P(random dart lands in circle) = 𝛑/4
+        <br>
+        𝛑_estimate = 4 * P(random dart lands in circle)
+        <br>
+        => 𝛑_estimate = 4 * hits/total
+    </span>
+        <span class='explanationLeft'>
+            <img src='pi_estimation.png'></img>
+        </span>
+</div>
+
+</div>
+    <div class='theMeat'>
+        <button onclick="addTask()">Add 20000000 more samples to queue</button>
+        <div id='status'></div>
+        <div id='results'></div>
+        <div id="my_dataviz"></div>
+    </div>
 
 </body>
 </html>
