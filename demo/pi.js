@@ -138,7 +138,7 @@ var svg = d3
 
 // Initialise a X axis:
 var x = d3.scaleLinear().range([0, width])
-var xAxis = d3.axisBottom().scale(x)
+var xAxis = d3.axisBottom().scale(x).ticks(6).tickFormat(d3.format('.2n'))
 svg.append('g')
     .attr('transform', 'translate(0,' + height + ')')
     .attr('class', 'myXaxis')
