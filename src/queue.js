@@ -72,7 +72,9 @@ function checkStatus(status) {
  * Add a task to the Queue for someone else to do.
  *
  * @param {FirebaseReference} ref
- * @param {Task} nTask Needs to have attribute signed.
+ * @param {Task} nTask It looks like this   
+ *      `{ value: someValue,
+        signed: 'bravo-niner'} // must be signed`
  *
  * @returns {Promise} resolves if successfull
  */
@@ -218,7 +220,7 @@ function changeTaskStatus(
  * @param {Task} task
  * @param {String} workerID
  *
- * @returns {Promise} Rejects(error) if task has already been claimed. Resolves(Task) otherwise
+ * @returns {Promise<task>} Rejects(error) if task has already been claimed. Resolves(Task) otherwise
  */
 function claimTask(ref, task, workerID) {
     return new Promise((resolve, reject) => {
@@ -308,7 +310,7 @@ function errorTask(ref, task, message) {
  * Fire callback when new jobs apear. You can claim them in the callback.
  *
  * @param {FirebaseReference} ref
- * @param {function} cb, will get called when a new task apears.
+ * @param {ticketCallback} cb - will get called when a new task apears.
  * @param {STATUSES} status
  *
  */
@@ -329,17 +331,23 @@ function watchQueue(ref, cb, status = STATUSES.available) {
 }
 
 /**
+ * 
+ * @callback ticketCallback
+ * @param {ticket} ticket
+ */
+
+/**
  * Callback used by myFunction.
- * @callback watchQueueAsync~availabe
- * @param {Object} Result
+ * @callback watchQueueAsync
+ * @param {Object} ticket
  * @param {Object} Error
  */
 /**
  * Watch the queue, and only accept one async task at a time.
- *   This will waiit for the callback to finish before notifying that another task is avaliable.
- *
+ *   This will wait for the callback to finish before notifying that another task is avaliable.
+ *   Note: This is currently slow to start with big queues
  * @param {FirebaseRef} ref
- * @param {watchQueueAsync~availabe} cb
+ * @param {watchQueueAsync} cb - gets called with cb(error, ticket). Error is undefined hopefully. 
  * @param {STATUSES} [status=STATUSES.available]
  *
  */
@@ -501,6 +509,40 @@ async function requeueStaleActiveTasks(
     }
 }
 
+/**
+ * Monitor avaliable tasks and call the callback when it's idle.
+ *
+ * @public
+ * @param {FirebaseRef} queueRef
+ * @param {function} callback
+ * @param {Number} minIdleTime - How long to wait for idle queue
+ * @param {Boolean} watchActiveList - Call callback when active list is also empty. This is ooff by default
+ */
+function monitorForIdle(
+    queueRef,
+    callback,
+    minIdleTime = 60000,
+    watchActiveList = false
+) {
+    let timeoutID = undefined
+    function innerCallback(snap) {
+        clearTimeout(timeoutID)
+        timeoutID = undefined
+        const count = snap.numChildren()
+        if (count === 0) {
+            timeoutID = setTimeout(callback, minIdleTime)
+        }
+    }
+    queueRef.child('available').on('value', async (snap) => {
+        innerCallback(snap)
+    })
+    if (watchActiveList) {
+        queueRef.child('active').on('value', async (snap) => {
+            innerCallback(snap)
+        })
+    }
+}
+
 export {
     STATUSES,
     TaskException,
@@ -517,4 +559,5 @@ export {
     taskListenerPromise,
     setServerTimestamp,
     requeueStaleActiveTasks,
+    monitorForIdle
 }

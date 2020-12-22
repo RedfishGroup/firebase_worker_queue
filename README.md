@@ -45,7 +45,7 @@ Works for firebase 7.1.0</p>
 <dt><a href="#changeTaskStatus">changeTaskStatus(ref, task, newStatus, options)</a> ⇒ <code>Promise</code></dt>
 <dd><p>Change the Status of a task.</p>
 </dd>
-<dt><a href="#claimTask">claimTask(ref, task, workerID)</a> ⇒ <code>Promise</code></dt>
+<dt><a href="#claimTask">claimTask(ref, task, workerID)</a> ⇒ <code>Promise.&lt;task&gt;</code></dt>
 <dd><p>Claim a task to be worked on.</p>
 </dd>
 <dt><a href="#completeTask">completeTask(ref, task, result)</a> ⇒ <code>Promise</code></dt>
@@ -54,12 +54,13 @@ Works for firebase 7.1.0</p>
 <dt><a href="#errorTask">errorTask(ref, task, message)</a> ⇒ <code>Promise</code></dt>
 <dd><p>Mark a task as having an error.</p>
 </dd>
-<dt><a href="#watchQueue">watchQueue(ref, cb,, status)</a></dt>
+<dt><a href="#watchQueue">watchQueue(ref, cb, status)</a></dt>
 <dd><p>Fire callback when new jobs apear. You can claim them in the callback.</p>
 </dd>
 <dt><a href="#watchQueueAsync">watchQueueAsync(ref, cb, [status])</a></dt>
 <dd><p>Watch the queue, and only accept one async task at a time.
-  This will waiit for the callback to finish before notifying that another task is avaliable.</p>
+  This will wait for the callback to finish before notifying that another task is avaliable.
+  Note: This is currently slow to start with big queues</p>
 </dd>
 <dt><a href="#getTask">getTask(ref, status)</a> ⇒ <code>Promise</code></dt>
 <dd><p>Get the most recent task of a certian status type.</p>
@@ -72,6 +73,19 @@ Works for firebase 7.1.0</p>
 </dd>
 <dt><a href="#requeueStaleActiveTasks">requeueStaleActiveTasks(ref, [expirationDuration])</a></dt>
 <dd><p>Put stale active tasks back on the availabe queue</p>
+</dd>
+<dt><a href="#monitorForIdle">monitorForIdle(queueRef, callback, minIdleTime, watchActiveList)</a></dt>
+<dd><p>Monitor avaliable tasks and call the callback when it&#39;s idle.</p>
+</dd>
+</dl>
+
+## Typedefs
+
+<dl>
+<dt><a href="#ticketCallback">ticketCallback</a> : <code>function</code></dt>
+<dd></dd>
+<dt><a href="#watchQueueAsync">watchQueueAsync</a> : <code>function</code></dt>
+<dd><p>Callback used by myFunction.</p>
 </dd>
 </dl>
 
@@ -133,7 +147,7 @@ Add a task to the Queue for someone else to do.
 | Param | Type | Description |
 | --- | --- | --- |
 | ref | <code>FirebaseReference</code> |  |
-| nTask | <code>Task</code> | Needs to have attribute signed. |
+| nTask | <code>Task</code> | It looks like this         `{ value: someValue,         signed: 'bravo-niner'} // must be signed` |
 
 <a name="clearTask"></a>
 
@@ -164,11 +178,11 @@ Change the Status of a task.
 
 <a name="claimTask"></a>
 
-## claimTask(ref, task, workerID) ⇒ <code>Promise</code>
+## claimTask(ref, task, workerID) ⇒ <code>Promise.&lt;task&gt;</code>
 Claim a task to be worked on.
 
 **Kind**: global function  
-**Returns**: <code>Promise</code> - Rejects(error) if task has already been claimed. Resolves(Task) otherwise  
+**Returns**: <code>Promise.&lt;task&gt;</code> - Rejects(error) if task has already been claimed. Resolves(Task) otherwise  
 
 | Param | Type |
 | --- | --- |
@@ -204,7 +218,7 @@ Mark a task as having an error.
 
 <a name="watchQueue"></a>
 
-## watchQueue(ref, cb,, status)
+## watchQueue(ref, cb, status)
 Fire callback when new jobs apear. You can claim them in the callback.
 
 **Kind**: global function  
@@ -212,34 +226,23 @@ Fire callback when new jobs apear. You can claim them in the callback.
 | Param | Type | Description |
 | --- | --- | --- |
 | ref | <code>FirebaseReference</code> |  |
-| cb, | <code>function</code> | will get called when a new task apears. |
+| cb | [<code>ticketCallback</code>](#ticketCallback) | will get called when a new task apears. |
 | status | [<code>STATUSES</code>](#STATUSES) |  |
 
 <a name="watchQueueAsync"></a>
 
 ## watchQueueAsync(ref, cb, [status])
 Watch the queue, and only accept one async task at a time.
-  This will waiit for the callback to finish before notifying that another task is avaliable.
+  This will wait for the callback to finish before notifying that another task is avaliable.
+  Note: This is currently slow to start with big queues
 
 **Kind**: global function  
 
-| Param | Type | Default |
-| --- | --- | --- |
-| ref | <code>FirebaseRef</code> |  | 
-| cb | [<code>availabe</code>](#watchQueueAsync..availabe) |  | 
-| [status] | [<code>STATUSES</code>](#STATUSES) | <code>STATUSES.available</code> | 
-
-<a name="watchQueueAsync..availabe"></a>
-
-### watchQueueAsync~availabe : <code>function</code>
-Callback used by myFunction.
-
-**Kind**: inner typedef of [<code>watchQueueAsync</code>](#watchQueueAsync)  
-
-| Param | Type |
-| --- | --- |
-| Result | <code>Object</code> | 
-| Error | <code>Object</code> | 
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| ref | <code>FirebaseRef</code> |  |  |
+| cb | [<code>watchQueueAsync</code>](#watchQueueAsync) |  | gets called with cb(error, ticket). Error is undefined hopefully. |
+| [status] | [<code>STATUSES</code>](#STATUSES) | <code>STATUSES.available</code> |  |
 
 <a name="getTask"></a>
 
@@ -291,6 +294,42 @@ Put stale active tasks back on the availabe queue
 | --- | --- | --- |
 | ref | <code>Reference</code> |  | 
 | [expirationDuration] | <code>number</code> | <code>1000*60*4</code> | 
+
+<a name="monitorForIdle"></a>
+
+## monitorForIdle(queueRef, callback, minIdleTime, watchActiveList)
+Monitor avaliable tasks and call the callback when it's idle.
+
+**Kind**: global function  
+**Access**: public  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| queueRef | <code>FirebaseRef</code> |  |  |
+| callback | <code>function</code> |  |  |
+| minIdleTime | <code>Number</code> | <code>60000</code> | How long to wait for idle queue |
+| watchActiveList | <code>Boolean</code> | <code>false</code> | Call callback when active list is also empty. This is ooff by default |
+
+<a name="ticketCallback"></a>
+
+## ticketCallback : <code>function</code>
+**Kind**: global typedef  
+
+| Param | Type |
+| --- | --- |
+| ticket | <code>ticket</code> | 
+
+<a name="watchQueueAsync"></a>
+
+## watchQueueAsync : <code>function</code>
+Callback used by myFunction.
+
+**Kind**: global typedef  
+
+| Param | Type |
+| --- | --- |
+| ticket | <code>Object</code> | 
+| Error | <code>Object</code> | 
 
 
 * * *
