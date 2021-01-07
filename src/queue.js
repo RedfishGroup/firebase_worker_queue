@@ -510,6 +510,25 @@ async function requeueStaleActiveTasks(
 }
 
 /**
+ * Occassionaly the queue will get blocked by an avaliable but claimed task. I am not sure what causes this.
+ * This will remove the worker ID so it can once again work. 
+ * This is not fast!
+ * @param {Reference} ref 
+ */
+async function requeueAvaliableButClaimedTasks(ref) {
+    const avalSnap = await ref.child('tasks').once('value')
+    const avalVals = avalSnap.val()
+    for (let i in avalVals){
+        let val = avalVals[i]
+        if(val.status == STATUSES.available){
+            if(val.workerID) {
+                ref.child('tasks').child(i).child('workerID').set(null) 
+            }
+        }
+    }
+}
+
+/**
  * Monitor avaliable tasks and call the callback when it's idle.
  *
  * @public
@@ -559,5 +578,6 @@ export {
     taskListenerPromise,
     setServerTimestamp,
     requeueStaleActiveTasks,
+    requeueAvaliableButClaimedTasks,
     monitorForIdle
 }
