@@ -487,12 +487,14 @@ function taskListenerPromise(ref, task) {
  *
  * @param {Reference} ref
  * @param {number} [expirationDuration=1000*60*4]
+ * @param {STATUSES} status Usually this will be active but ocasionally one might want to run this on available
  */
 async function requeueStaleActiveTasks(
     ref,
-    expirationDuration = 1000 * 60 * 4
+    expirationDuration = 1000 * 60 * 4,
+    status = STATUSES.active
 ) {
-    const actSnap = await ref.child('active').once('value')
+    const actSnap = await ref.child(status).once('value')
     const actVal = actSnap.val()
     for (let i in actVal) {
         const taskSnap = await ref.child('tasks').child(i).once('value')
@@ -514,18 +516,20 @@ async function requeueStaleActiveTasks(
  * This will remove the worker ID so it can once again work. 
  * This is not fast!
  * @param {Reference} ref 
+ * @param {Number} limitToFirst. The higher the numnber the more thurough amd slow the search is. It is usually the first one that is the problem in my experience
  */
-async function requeueAvaliableButClaimedTasks(ref) {
-    const avalSnap = await ref.child('tasks').once('value')
+async function requeueAvaliableButClaimedTasks(ref, limitToFirst=10) {
+    const avalSnap = await ref.child(STATUSES.available).orderByKey()
+        .limitToFirst(limitToFirst).once('value')
     const avalVals = avalSnap.val()
-    for (let i in avalVals){
-        let val = avalVals[i]
-        if(val.status == STATUSES.available){
-            if(val.workerID) {
-                ref.child('tasks').child(i).child('workerID').set(null) 
-            }
+    Object.keys(avalVals).forEach(async (id)=>{
+        const taskSnap = await ref.child('tasks').child(id).once('value')
+        const val = taskSnap.val()
+        console.log('val',val)
+        if(val.workerID) {
+            ref.child('tasks').child(id).child('workerID').set(null) 
         }
-    }
+    })
 }
 
 /**
