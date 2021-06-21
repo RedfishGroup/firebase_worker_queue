@@ -522,6 +522,7 @@ async function requeueAvaliableButClaimedTasks(ref, limitToFirst=10) {
     const avalSnap = await ref.child(STATUSES.available).orderByKey()
         .limitToFirst(limitToFirst).once('value')
     const avalVals = avalSnap.val()
+    if(!avalVals) return // empty queue...all done
     Object.keys(avalVals).forEach(async (id)=>{
         const taskSnap = await ref.child('tasks').child(id).once('value')
         const val = taskSnap.val()
