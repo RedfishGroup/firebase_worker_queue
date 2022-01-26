@@ -9,6 +9,19 @@
  * Redfish Group LLC 2019.
  */
 
+import {
+    child,
+    limitToFirst,
+    push,
+    onValue,
+    onChildAdded,
+    orderByKey,
+    query,
+    runTransaction,
+    set,
+    update,
+} from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-database.js'
+
 // private static value.
 //  This is currently, as of Oct 2019, the current constant the firebase uses to retrive the server time.
 let ServerTimeStamp = { '.sv': 'timestamp' }
@@ -93,18 +106,14 @@ function addTask(ref, nTask) {
         }
         if (task.key) throw new TaskException('task already has a key: ', task)
 
-        const taskRef = ref.child('tasks').push()
+        const taskRef = push(child(ref, 'tasks'))
         task.key = taskRef.key
         task.timeAdded = ServerTimeStamp
-        taskRef
-            .set(task)
+        set(taskRef, task)
             .then(() => {
-                ref.child(task.status)
-                    .child(task.key)
-                    .set(true)
-                    .then(() => {
-                        resolve(task)
-                    })
+                set(child(ref, `${task.status}/${task.key}`), true).then(() => {
+                    resolve(task)
+                })
             })
             .catch((e) => reject(e))
     })
@@ -121,12 +130,9 @@ function clearTask(ref, task) {
     if (!task.key) throw new TaskException('clear task requires task key', task)
     checkStatus(task.status)
 
-    ref.child(task.status)
-        .child(task.key)
-        .set(null)
-        .then(() => {
-            ref.child('tasks').child(task.key).set(null)
-        })
+    set(child(ref, `${task.status}/${task.key}`), null).then(() => {
+        set(child(ref, `tasks/${task.key}`), null)
+    })
 }
 
 /**
@@ -190,22 +196,23 @@ function changeTaskStatus(
             })
         }
 
-        const oldRef = ref.child(task.status).child(task.key)
-        const newRef = ref.child(newStatus).child(task.key)
-        const taskRef = ref.child('tasks').child(task.key)
+        const oldRef = child(ref, `${task.status}/${task.key}`)
+        const newRef = child(ref, `${newStatus}/${task.key}`)
+        const taskRef = child(ref, `tasks/${task.key}`)
 
-        oldRef.once('value').then(async (snap) => {
+        onValue(oldRef, async (snap) => {
             try {
                 const taskData = snap.val()
                 if (!taskData) {
                     throw new TaskException('no data found', task)
                 }
-                await oldRef.set(null)
-                await taskRef.update(newTask)
-                const ev2 = await taskRef.once('value')
-                const val2 = ev2.val()
-                await newRef.set(true)
-                resolve(val2)
+                await set(oldRef, null)
+                await update(taskRef, newTask)
+                onValue(taskRef, (snap) => {
+                    const val2 = snap.val()
+                    await set(newRef, true)
+                    resolve(val2)
+                })
             } catch (err) {
                 reject(err)
             }
@@ -224,42 +231,33 @@ function changeTaskStatus(
  */
 function claimTask(ref, task, workerID) {
     return new Promise((resolve, reject) => {
-        const taskWorkerRef = ref
-            .child('tasks')
-            .child(task.key)
-            .child('workerID')
-        taskWorkerRef.transaction(
-            (currentData) => {
-                if (currentData === null) {
-                    return workerID
-                }
+        const taskWorkerRef = child(ref, `tasks/${task.key}/workerID`)
+        runTransaction(taskWorkerRef, (currentData) => {
+            if (currentData === null) {
+                return workerID
+            }
+            console.log(`Task ${task.key} already claimed by ${currentData}`)
+            return
+        }).then((error, committed, snap) => {
+            if (error) {
+                console.log('Transaction failed abnormally!', error)
+                return reject(error)
+            } else if (!committed) {
                 console.log(
-                    `Task ${task.key} already claimed by ${currentData}`
+                    'We aborted the transaction because a workerID has already been assigned'
                 )
-                return
-            },
-            (error, committed, snap) => {
-                if (error) {
-                    console.log('Transaction failed abnormally!', error)
-                    return reject(error)
-                } else if (!committed) {
-                    console.log(
-                        'We aborted the transaction because a workerID has already been assigned'
-                    )
-                    return reject('already claimed')
-                } else {
-                    // successfully claimed the task,  update its status
-                    changeTaskStatus(ref, task, STATUSES.active)
-                        .then((newTask) => {
-                            resolve(newTask)
-                        })
-                        .catch((error) => {
-                            reject(error)
-                        })
-                }
-            },
-            false
-        )
+                return reject('already claimed')
+            } else {
+                // successfully claimed the task,  update its status
+                changeTaskStatus(ref, task, STATUSES.active)
+                    .then((newTask) => {
+                        resolve(newTask)
+                    })
+                    .catch((error) => {
+                        reject(error)
+                    })
+            }
+        })
     })
 }
 
@@ -316,22 +314,19 @@ function errorTask(ref, task, message) {
  */
 function watchQueue(ref, cb, status = STATUSES.available) {
     checkStatus(status)
-    ref.child(status).on('child_added', function (snap) {
+    onChildAdded(child(ref, status), function (snap) {
         console.log('child_added: ', { snap })
         if (snap && cb) {
             const key = snap.key
-            ref.child('tasks')
-                .child(key)
-                .once('value')
-                .then((snap) => {
-                    cb(snap.val())
-                })
+            onValue(child(ref, `tasks/${key}/value`), (snap) => {
+                cb(snap.val())
+            })
         }
     })
 }
 
 /**
- * 
+ *
  * @callback ticketCallback
  * @param {ticket} ticket
  */
@@ -342,26 +337,34 @@ function watchQueue(ref, cb, status = STATUSES.available) {
  * @param {Object} ticket
  * @param {Object} Error
  */
+
 /**
  * Watch the queue, and only accept one async task at a time.
  *   This will wait for the callback to finish before notifying that another task is avaliable.
  *   Note: This is currently slow to start with big queues
  * @param {FirebaseRef} ref
- * @param {watchQueueAsync} cb - gets called with cb(error, ticket). Error is undefined hopefully. 
+ * @param {watchQueueAsync} cb - gets called with cb(error, ticket). Error is undefined hopefully.
  * @param {STATUSES} [status=STATUSES.available]
  *
  */
 function watchQueueAsync(ref, cb, status = STATUSES.available) {
     checkStatus(status)
-    ref.child(status).on('child_added', async function (snap) {
+    onChildAdded(child(ref, status), async function (snap) {
         console.log('child_added: ', { snap })
         if (snap && cb) {
             const key = snap.key
-            const taskRef = ref.child('tasks').child(key)
-            const snap2 = await taskRef.once('value')
-            const val = await snap2.val()
-            asyncQueue.push({ cb, val })
-            popFromAsyncQueue()
+            const taskRef = child(ref, `tasks/${key}`)
+            onValue(
+                taskRef,
+                (snap2) => {
+                    const val = await snap2.val()
+                    asyncQueue.push({ cb, val })
+                    popFromAsyncQueue()
+                },
+                {
+                    onlyOnce: true,
+                }
+            )
         }
     })
 }
@@ -404,25 +407,25 @@ function getTask(ref, status = STATUSES.available) {
     if (!ref) throw new TaskException('need a valid ref')
     checkStatus(status)
     return new Promise((resolve, reject) => {
-        ref.child(status)
-            .orderByKey()
-            .limitToFirst(1)
-            .once('value', (snap) => {
+        onValue(
+            query(child(ref, status), orderByKey(), limitToFirst(1)),
+            (snap) => {
                 if (snap.exists()) {
                     const key = Object.keys(snap.val())[0]
-                    ref.child('tasks')
-                        .child(key)
-                        .once('value')
-                        .then((snap) => {
+                    onValue(
+                        ref,
+                        child(`tasks/${key}/value`),
+                        (snap) => {
                             resolve(snap.val())
-                        })
-                        .catch((err) => {
-                            reject(err)
-                        })
+                        },
+                        { onlyOnce: true }
+                    )
                 } else {
                     reject('snapshot is null')
                 }
-            })
+            },
+            { onlyOnce: true }
+        )
     })
 }
 
@@ -435,28 +438,22 @@ function getTask(ref, status = STATUSES.available) {
  * @param {Function} onError . called on error
  */
 function taskListener(ref, task, onComplete = null, onError = null) {
-    const taskListenerRef = ref.child('tasks').child(task.key)
-    const taskListener = taskListenerRef.on(
-        'value',
-        (snap) => {
-            if (!snap.exists()) {
-                console.log('task does not exist, going to cancel listener')
-                taskListenerRef.off('value', taskListener)
-            }
-            const task = snap.val()
-            if (task.status === STATUSES.complete) {
-                if (onComplete) onComplete(task)
-                taskListenerRef.off('value', taskListener)
-            }
-            if (task.status === STATUSES.error) {
-                if (onError) onError(task)
-                taskListenerRef.off('value', taskListener)
-            }
-        },
-        (error) => {
-            console.log('GOT ERROR: ', error)
+    const taskListenerRef = child(ref, `tasks/${task.key}`)
+    const taskListener = onValue(taskListenerRef, (snap) => {
+        if (!snap.exists()) {
+            console.log('task does not exist, going to cancel listener')
+            taskListenerRef.off('value', taskListener)
         }
-    )
+        const task = snap.val()
+        if (task.status === STATUSES.complete) {
+            if (onComplete) onComplete(task)
+            taskListenerRef.off('value', taskListener)
+        }
+        if (task.status === STATUSES.error) {
+            if (onError) onError(task)
+            taskListenerRef.off('value', taskListener)
+        }
+    })
 }
 
 /**
@@ -494,43 +491,65 @@ async function requeueStaleActiveTasks(
     expirationDuration = 1000 * 60 * 4,
     status = STATUSES.active
 ) {
-    const actSnap = await ref.child(status).once('value')
-    const actVal = actSnap.val()
-    for (let i in actVal) {
-        const taskSnap = await ref.child('tasks').child(i).once('value')
-        const taskVal = taskSnap.val()
-        if (taskVal) {
-            const time = new Date(taskVal.timeStarted)
-            const now = new Date()
-            if (now - time > expirationDuration) {
-                changeTaskStatus(ref, taskVal, STATUSES.available, {
-                    requeue: true,
+    onValue(
+        ref,
+        child(status),
+        (actSnap) => {
+            const actVal = actSnap.val()
+            for (let i in actVal) {
+                onValue(child(ref, `tasks/${i}`), (taskSnap) => {
+                    const taskVal = taskSnap.val()
+                    if (taskVal) {
+                        const time = new Date(taskVal.timeStarted)
+                        const now = new Date()
+                        if (now - time > expirationDuration) {
+                            changeTaskStatus(ref, taskVal, STATUSES.available, {
+                                requeue: true,
+                            })
+                        }
+                    }
                 })
             }
-        }
-    }
+        },
+        { onlyOnce: true }
+    )
 }
 
 /**
  * Occassionaly the queue will get blocked by an avaliable but claimed task. I am not sure what causes this.
- * This will remove the worker ID so it can once again work. 
+ * This will remove the worker ID so it can once again work.
  * This is not fast!
- * @param {Reference} ref 
+ * @param {Reference} ref
  * @param {Number} limitToFirst. The higher the numnber the more thurough amd slow the search is. It is usually the first one that is the problem in my experience
  */
-async function requeueAvaliableButClaimedTasks(ref, limitToFirst=10) {
-    const avalSnap = await ref.child(STATUSES.available).orderByKey()
-        .limitToFirst(limitToFirst).once('value')
-    const avalVals = avalSnap.val()
-    if(!avalVals) return // empty queue...all done
-    Object.keys(avalVals).forEach(async (id)=>{
-        const taskSnap = await ref.child('tasks').child(id).once('value')
-        const val = taskSnap.val()
-        console.log('val',val)
-        if(val.workerID) {
-            ref.child('tasks').child(id).child('workerID').set(null) 
-        }
-    })
+async function requeueAvaliableButClaimedTasks(ref, limitToFirst = 10) {
+    onValue(
+        query(
+            child(ref, STATUSES.available),
+            orderByKey(),
+            limitToFirst(limitToFirst)
+        ),
+        (avalSnap) => {
+            const avalVals = avalSnap.val()
+
+            if (!avalVals) return // empty queue...all done
+
+            Object.keys(avalVals).forEach(async (id) => {
+                onValue(
+                    child(ref, `tasks/${id}`),
+                    (taskSnap) => {
+                        const val = taskSnap.val()
+                        console.log('val', val)
+                        if (val.workerID) {
+                            set(child(ref, `tasks/${id}/workerID`), null)
+                        }
+                    },
+                    { onlyOnce: true }
+                )
+            })
+        },
+        { onlyOnce: true }
+    )
 }
 
 /**
@@ -557,11 +576,12 @@ function monitorForIdle(
             timeoutID = setTimeout(callback, minIdleTime)
         }
     }
-    queueRef.child('available').on('value', async (snap) => {
+    onValue(child(queueRef, 'available'), async (snap) => {
         innerCallback(snap)
     })
+
     if (watchActiveList) {
-        queueRef.child('active').on('value', async (snap) => {
+        onValue(child(queueRef, 'active'), async (snap) => {
             innerCallback(snap)
         })
     }

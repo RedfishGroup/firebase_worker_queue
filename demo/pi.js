@@ -1,5 +1,10 @@
 import * as Q from '../src/queue.js'
 
+import 'https://www.gstatic.com/firebasejs/9.6.2/firebase-app-compat.js'
+import 'https://www.gstatic.com/firebasejs/9.3.0/firebase-database-compat.js'
+
+
+
 /**
  * Throw a dart at a board. If it is in a circle return true
  *   The area of the circle in a 1x1 box is π/4. So the change of randomly landing in the circle is also π/4.
