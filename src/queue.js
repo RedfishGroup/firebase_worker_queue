@@ -208,7 +208,7 @@ function changeTaskStatus(
                 }
                 await set(oldRef, null)
                 await update(taskRef, newTask)
-                onValue(taskRef, (snap) => {
+                onValue(taskRef, async (snap) => {
                     const val2 = snap.val()
                     await set(newRef, true)
                     resolve(val2)
