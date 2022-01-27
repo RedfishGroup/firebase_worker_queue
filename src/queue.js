@@ -20,7 +20,7 @@ import {
     runTransaction,
     set,
     update,
-} from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-database.js'
+} from 'firebase/database'
 
 // private static value.
 //  This is currently, as of Oct 2019, the current constant the firebase uses to retrive the server time.
