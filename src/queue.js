@@ -356,7 +356,7 @@ function watchQueueAsync(ref, cb, status = STATUSES.available) {
             const taskRef = child(ref, `tasks/${key}`)
             onValue(
                 taskRef,
-                (snap2) => {
+                async (snap2) => {
                     const val = await snap2.val()
                     asyncQueue.push({ cb, val })
                     popFromAsyncQueue()
