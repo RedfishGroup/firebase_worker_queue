@@ -13,6 +13,7 @@ import {
     child,
     limitToFirst,
     push,
+    off,
     onValue,
     onChildAdded,
     orderByKey,
@@ -442,16 +443,16 @@ function taskListener(ref, task, onComplete = null, onError = null) {
     const taskListener = onValue(taskListenerRef, (snap) => {
         if (!snap.exists()) {
             console.log('task does not exist, going to cancel listener')
-            taskListenerRef.off('value', taskListener)
+            off(taskListenerRef, 'value', taskListener)
         }
         const task = snap.val()
         if (task.status === STATUSES.complete) {
             if (onComplete) onComplete(task)
-            taskListenerRef.off('value', taskListener)
+            off(taskListenerRef, 'value', taskListener)
         }
         if (task.status === STATUSES.error) {
             if (onError) onError(task)
-            taskListenerRef.off('value', taskListener)
+            off(taskListenerRef, 'value', taskListener)
         }
     })
 }
