@@ -14,7 +14,7 @@ import {
     limitToFirst,
     push,
     off,
-    onValue,
+    onValue,f
     onChildAdded,
     orderByKey,
     query,
@@ -522,14 +522,14 @@ async function requeueStaleActiveTasks(
  * This will remove the worker ID so it can once again work.
  * This is not fast!
  * @param {Reference} ref
- * @param {Number} limitToFirst. The higher the numnber the more thurough amd slow the search is. It is usually the first one that is the problem in my experience
+ * @param {Number} count. The higher the number the more thurough amd slow the search is. It is usually the first one that is the problem in my experience
  */
-async function requeueAvaliableButClaimedTasks(ref, limitToFirst = 10) {
+async function requeueAvaliableButClaimedTasks(ref, count = 10) {
     onValue(
         query(
             child(ref, STATUSES.available),
             orderByKey(),
-            limitToFirst(limitToFirst)
+            limitToFirst(count)
         ),
         (avalSnap) => {
             const avalVals = avalSnap.val()
