@@ -321,7 +321,7 @@ function watchQueue(ref, cb, status = STATUSES.available) {
         console.log('child_added: ', { snap })
         if (snap && cb) {
             const key = snap.key
-            onValue(child(ref, `tasks/${key}/value`), (snap) => {
+            onValue(child(ref, `tasks/${key}`), (snap) => {
                 cb(snap.val())
             })
         }
