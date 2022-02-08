@@ -205,8 +205,9 @@ function changeTaskStatus(
             try {
                 const taskData = snap.val()
                 if (!taskData) {
-                    throw new TaskException('no data found', task)
-                }
+                    console.log('no data found', snap.ref.toString(), task, taskData)
+                    // throw new TaskException('no data found', task)
+                } 
                 await set(oldRef, null)
                 await update(taskRef, newTask)
                 onValue(taskRef, async (snap) => {
@@ -217,7 +218,7 @@ function changeTaskStatus(
             } catch (err) {
                 reject(err)
             }
-        })
+        },{onlyOnce:true})
     })
 }
 
@@ -239,7 +240,8 @@ function claimTask(ref, task, workerID) {
             }
             console.log(`Task ${task.key} already claimed by ${currentData}`)
             return
-        }).then((error, committed, snap) => {
+        }).then((ev) => {
+            const {committed,snapshot,error} = ev
             if (error) {
                 console.log('Transaction failed abnormally!', error)
                 return reject(error)
@@ -258,7 +260,7 @@ function claimTask(ref, task, workerID) {
                         reject(error)
                     })
             }
-        })
+        }).catch(reject)
     })
 }
 
@@ -493,8 +495,7 @@ async function requeueStaleActiveTasks(
     status = STATUSES.active
 ) {
     onValue(
-        ref,
-        child(status),
+        child(ref,status),
         (actSnap) => {
             const actVal = actSnap.val()
             for (let i in actVal) {

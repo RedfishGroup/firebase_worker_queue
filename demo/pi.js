@@ -1,8 +1,6 @@
 import * as Q from '../src/queue.js'
-
-import 'https://www.gstatic.com/firebasejs/9.6.2/firebase-app-compat.js'
-import 'https://www.gstatic.com/firebasejs/9.3.0/firebase-database-compat.js'
-
+import { initializeApp } from '@firebase/app';
+import { getDatabase, ref as fbRef, onChildAdded, onValue, child as fbChild } from "@firebase/database";
 
 
 /**
@@ -49,30 +47,30 @@ async function sampleNTimesAsync(n = 100000, sampletSize = 1000000) {
  * Worker Queue portion
  *
  * */
-var app = firebase.initializeApp({
+var app = initializeApp({
     apiKey: 'AIzaSyCKuD19DkUeHtEawjVB5IPCXSqe5lkaWIY',
     databaseURL: 'https://workerqueuedemo.firebaseio.com/',
     projectId: 'workerqueuedemo',
 })
-const db = app.database()
-const ref = db.ref().child('demo').child('pi')
+const db = getDatabase(app)
+const rootRef = fbRef(db,'demo/pi')
 
 var stateForUI = 'idle'
 let sum = 0
 let count = 0
 updateUI()
 
-Q.watchQueueAsync(ref, async (task) => {
+Q.watchQueueAsync(rootRef, async (task) => {
     try {
         stateForUI = 'claiming task'
         updateUI()
-        const ticket = await Q.claimTask(ref, task, 'pi client')
+        const ticket = await Q.claimTask(rootRef, task, 'pi client')
         console.time('computing...')
         stateForUI = 'computing'
         updateUI()
         const result = await sampleNTimesAsync(ticket.n)
         console.timeEnd('computing...')
-        await Q.completeTask(ref, ticket, result)
+        await Q.completeTask(rootRef, ticket, result)
         stateForUI = 'idle'
         updateUI()
     } catch (err) {
@@ -81,7 +79,7 @@ Q.watchQueueAsync(ref, async (task) => {
 })
 
 window.addTask = async function addTask() {
-    await Q.addTask(ref, {
+    await Q.addTask(rootRef, {
         n: 20000000,
         signed: 'pi demo',
     })
@@ -89,19 +87,21 @@ window.addTask = async function addTask() {
 
 // Keep a running total
 const results = []
-ref.child('complete').on('child_added', async (snap) => {
+onChildAdded(fbChild(rootRef,'complete'),  async (snap) => {
     // there should be a helper for this
-    const snap2 = await ref.child('tasks').child(snap.key).once('value')
-    const val = snap2.val()
-    if (val.result) {
-        sum = sum + val.result.sum
-        count = count + val.result.n
-        let piEstimate = 4 * (sum / count)
-        results.push({ ...val.result, piEstimate, totalCount: count })
-    }
-    console.log('pi ~=', 4 * (sum / count))
-    updateUI()
-    updateGraph(results)
+    const ruff = await fbChild(rootRef, `tasks/${snap.key}`)
+    onValue(ruff,(snap2)=>{
+        const val = snap2.val()
+        if (val && val.result) {
+            sum = sum + val.result.sum
+            count = count + val.result.n
+            let piEstimate = 4 * (sum / count)
+            results.push({ ...val.result, piEstimate, totalCount: count })
+        }
+        console.log('pi ~=', 4 * (sum / count))
+        updateUI()
+        updateGraph(results)
+    }, {onlyOnce:true})
 })
 
 /**
