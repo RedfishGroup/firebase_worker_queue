@@ -214,7 +214,7 @@ function changeTaskStatus(
                     const val2 = snap.val()
                     await set(newRef, true)
                     resolve(val2)
-                })
+                },{onlyOnce:true})
             } catch (err) {
                 reject(err)
             }
