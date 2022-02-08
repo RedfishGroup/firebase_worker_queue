@@ -9,7 +9,7 @@
     "devDependencies": {
         "jsdoc-to-markdown": "^5.0.1"
     },
-    "peerDependencies": {
+    "dependencies": {
         "firebase": "9.6.2"
     },
     "scripts": {
