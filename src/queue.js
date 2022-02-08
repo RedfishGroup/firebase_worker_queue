@@ -14,7 +14,7 @@ import {
     limitToFirst,
     push,
     off,
-    onValue,f
+    onValue,
     onChildAdded,
     orderByKey,
     query,
