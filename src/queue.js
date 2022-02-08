@@ -205,8 +205,8 @@ function changeTaskStatus(
             try {
                 const taskData = snap.val()
                 if (!taskData) {
-                    console.log('no data found', snap.ref.toString(), task, taskData)
-                    // throw new TaskException('no data found', task)
+                    // console.log('no data found', snap.ref.toString(), task, taskData)
+                    throw new TaskException('no data found', task)
                 } 
                 await set(oldRef, null)
                 await update(taskRef, newTask)
