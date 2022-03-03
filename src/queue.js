@@ -510,7 +510,7 @@ async function requeueStaleActiveTasks(
                             })
                         }
                     }
-                })
+                }, { onlyOnce: true })
             }
         },
         { onlyOnce: true }
