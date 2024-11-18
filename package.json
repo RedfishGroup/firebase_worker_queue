@@ -10,7 +10,7 @@
         "jsdoc-to-markdown": "^5.0.1"
     },
     "dependencies": {
-        "firebase": "9.6.2"
+        "firebase": "10.9.0"
     },
     "scripts": {
         "docs": "rm README.md; node ./node_modules/jsdoc-to-markdown/bin/cli.js ./src/queue.js --template README.hbs >> README.md",
